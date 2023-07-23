@@ -60,6 +60,8 @@ txtLocation  = ['WorldView', 'mainWindow', 'sprSubBanner', 'txtLocation']
 txtLevel = ['WorldView', 'mainWindow', 'sprSubBanner', 'txtLevel']
 txtName  = ['WorldView', 'mainWindow', 'sprBanner', 'txtName']
 playButton = ['WorldView', 'mainWindow', 'btnPlay']
+chatWindowPath = ['WorldView', 'WizardChatBox', 'chatContainer', 'chatLogContainer', 'chatLogInnerContainer', 'chatLog']
+rightClassRoomButton = ["WorldView", "mainWindow", "RightClassRoomButton"]
 
 
 
@@ -138,7 +140,6 @@ async def nearestReagent(client,title): #returns a boolean for whether a reagent
         if await entity.object_name() in reagents:
             print(f'[{removeTitle(title)}] Reagent Detected:', await entity.object_name())
             reagentList += [entity]
-        await asyncio.sleep(0)
     if len(reagentList)== 0 :
         return False, None
     else: 
@@ -194,11 +195,13 @@ async def skipDialogue(client): #skips dialogue boxes if any opened
     
 
 async def azothCollect(client,tipAmount): #collects azoth, uses the number of TipWindows to check if azoth is collected >>> TO BE REPLACED WITH DROP LOGGER
+
+
     while await petPowerVisibility(client):
         await petPower(client,0.05)
-    while tipAmount == len(await client.root_window.get_windows_with_name('TipWindow')):
-        await petPower(client, 0.1)
-        await asyncio.sleep(0.1)
+    while not 'You received: Azoth' in await (await window_from_path(client.root_window, chatWindowPath)).maybe_text():
+        await petPower(client, 0.05)
+        await asyncio.sleep(0.05)
 
 async def snackVisibility(client): #checks if a snack is visible in the first snack slot
     return await is_visible_by_path(client.root_window, snackCard0)
@@ -252,7 +255,7 @@ async def azothFarmer(p,listPosition):
         await asyncio.sleep(8.5)
         
         if await is_visible_by_path(p.root_window, quitButton):
-            await p.send_key(Keycode.ESC, 0)
+            await p.send_key(Keycode.ESC, 0.05)
         
         
         originalWizards = len(activeClients[listPosition].wizLst)
@@ -323,15 +326,16 @@ async def azothFarmer(p,listPosition):
                         else: #presses x while waiting to load into dungeon
                             location = await p.zone_name()
                             while location == await p.zone_name():
-                                if await crownshopVisibilty(p):
-                                    await asyncio.sleep(1)
-                                    await p.send_key(Keycode.ESC, 0.3)
-                                    await asyncio.sleep(0.4)
-                                    await p.send_key(Keycode.ESC, 0.3)
-                                    await asyncio.sleep(1)
-                                await p.send_key(Keycode.X, 0)
-                            while await p.is_loading():
-                                await p.send_key(Keycode.X, 1)
+                                while location == await p.zone_name():
+                                    if await crownshopVisibilty(p):
+                                        await asyncio.sleep(1)
+                                        await p.send_key(Keycode.ESC, 0.3)
+                                        await asyncio.sleep(0.4)
+                                        await p.send_key(Keycode.ESC, 0.3)
+                                        await asyncio.sleep(1)
+                                    await p.send_key(Keycode.X, 0.1)
+                                while await p.is_loading():
+                                    await p.send_key(Keycode.X, 0.1)
                                 
                                 
                         
@@ -510,6 +514,10 @@ async def logout_and_in(client,nextWizard,needSwitch,title):
             
         switch = True        
         while switch and needSwitch:
+                if await is_visible_by_path(client.root_window, rightClassRoomButton):
+                    await click_window_until_gone(client, rightClassRoomButton)
+                
+                
                 await client.send_key(Keycode.TAB, 0.05)
                 try:        
                     wizard  = wizardInfo(await (await window_from_path(client.root_window, txtName)).maybe_text(),
@@ -598,7 +606,8 @@ async def main():
     print('Azoth Farm Bot AKA Milwrs emotional crisis')
     print("""Credits: Hailtothethrone- the original bot,
           Nitsuj- discovery of Halley's observatory,
-          Ultimate- fuck you, thanks for the help""")
+          Ultimate- fuck you, thanks for the help
+          Lxghtend- added 7th character support (i snuck this in here)""")
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),"accounts.txt")) as my_file:
             accountList = [
                 line.strip().split(":") for line in my_file.read().split("\n") #reads account list and puts into into a list
