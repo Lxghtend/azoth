@@ -62,6 +62,8 @@ txtName  = ['WorldView', 'mainWindow', 'sprBanner', 'txtName']
 playButton = ['WorldView', 'mainWindow', 'btnPlay']
 chatWindowPath = ['WorldView', 'WizardChatBox', 'chatContainer', 'chatLogContainer', 'chatLogInnerContainer', 'chatLog']
 rightClassRoomButton = ["WorldView", "mainWindow", "RightClassRoomButton"]
+leftClassRoomButton = ["WorldView", "mainWindow", "LeftClassRoomButton"]
+
 
 
 
@@ -119,6 +121,7 @@ async def click_window_until_gone(client, path): #i did this im very cool
 
 
 async def petPower(client, delay=2): #clicks the power button
+    await asyncio.sleep(0.2)
     await click_window_from_path(client.mouse_handler, client.root_window, petPowerButton)
 
     
@@ -185,7 +188,7 @@ async def skipDialogue(client): #skips dialogue boxes if any opened
     while True:
         await asyncio.sleep(0.2)
         while await client.is_in_dialog():
-            await client.send_key(Keycode.SPACEBAR,0)
+            await client.send_key(Keycode.SPACEBAR, 0)
         while await crownshopVisibilty(client):
             await asyncio.sleep(1)
             await client.send_key(Keycode.ESC, 0.3)
@@ -221,24 +224,30 @@ async def azothFarmer(p,listPosition):
         while not await is_visible_by_path(p.root_window, playButton):
             await p.send_key(Keycode.TAB, 0.1)
         
-        while not removeTags(str(await (await window_from_path(p.root_window, txtLocation)).maybe_text())) in baseLocationList :
+        while not removeTags(str(await (await window_from_path(p.root_window, txtLocation)).maybe_text())) in baseLocationList : #when not in correct place, move on
             await p.send_key(Keycode.TAB, 0)
         
-        wizard  = wizardInfo(await (await window_from_path(p.root_window, txtName)).maybe_text(),
+        await asyncio.sleep(1.2)
+            
+        if await is_visible_by_path(p.root_window, leftClassRoomButton):
+            await click_window_until_gone(p, leftClassRoomButton)
+                
+        wizard  = wizardInfo(await (await window_from_path(p.root_window, txtName)).maybe_text(), #then grab the next persons info, and if its in the spot, add it to the list
                              await (await window_from_path(p.root_window, txtLevel)).maybe_text(),
                              await (await window_from_path(p.root_window, txtLocation)).maybe_text(),0,0)
-        
+                             
+        if await is_visible_by_path(p.root_window, rightClassRoomButton):
+            await click_window_until_gone(p, rightClassRoomButton)                     
+                            
         while not wizard in [wiz for wiz in activeClients[listPosition].wizLst]:                     
-            
             if removeTags(wizard.Location) in baseLocationList :
                 activeClients[listPosition].wizLst += [copy.deepcopy(wizard)]
-                
-
 
             await p.send_key(Keycode.TAB, 0)
             wizard  = wizardInfo(await (await window_from_path(p.root_window, txtName)).maybe_text(),
                                 await (await window_from_path(p.root_window, txtLevel)).maybe_text(),
                                 await (await window_from_path(p.root_window, txtLocation)).maybe_text(),0,0)
+                                
               
         print(f'[{activeClients[listPosition].title}] Is using these wizards:')
         for x in activeClients[listPosition].wizLst:
@@ -299,9 +308,9 @@ async def azothFarmer(p,listPosition):
                     if await crownshopVisibilty(p):
                         await asyncio.sleep(1)
                         await p.send_key(Keycode.ESC, 0.3)
-                        await asyncio.sleep(0.4)
+                        await asyncio.sleep(1)
                         await p.send_key(Keycode.ESC, 0.3)
-                        await asyncio.sleep(0.5) 
+                        await asyncio.sleep(1) 
                         
                     
                     print(f'[{activeClients[listPosition].title}]: {removeTags(wizard.Name)} has {wizard.Happiness} happiness')
@@ -330,7 +339,7 @@ async def azothFarmer(p,listPosition):
                                     if await crownshopVisibilty(p):
                                         await asyncio.sleep(1)
                                         await p.send_key(Keycode.ESC, 0.3)
-                                        await asyncio.sleep(0.4)
+                                        await asyncio.sleep(1)
                                         await p.send_key(Keycode.ESC, 0.3)
                                         await asyncio.sleep(1)
                                     await p.send_key(Keycode.X, 0.1)
@@ -487,7 +496,7 @@ async def logout_and_in(client,nextWizard,needSwitch,title):
         #fail check is used multiple times as it is what i have called the variable that ends the button pressing loops
         
         print(f'[{title}] Logging out and in')
-        await client.send_key(Keycode.ESC, 0.1)
+        await client.send_key(Keycode.ESC, 0.3)
 
 
         #basic idea here is it will keep pressing the button until it detects something that means it can move onto the next part in logging out
