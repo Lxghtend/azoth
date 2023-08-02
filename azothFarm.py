@@ -402,7 +402,7 @@ async def azothFarmer(p,listPosition):
                                 try: 
                                     await asyncio.wait_for(azothCollect(p,tiplen), 8) #waits for 8 seconds for the azoth to be collected
                                 except: 
-                                    print(print(f'[{activeClients[listPosition].title}]-Failsafe activated quit without azoth, DM this to milwr to ruin his day'))
+                                    print(print(f'[{activeClients[listPosition].title}]-failsafe activated, quit without azoth'))
 
 
 
@@ -539,7 +539,6 @@ async def logout_and_in(client,nextWizard,needSwitch,title):
                         await click_window_until_gone(client, rightClassRoomButton)
 
                 if current_time - start_time > 10:
-                    print("left room triggered")
                     await asyncio.sleep(1)
                     await click_window_until_gone(client, leftClassRoomButton)
                     break
@@ -549,7 +548,6 @@ async def logout_and_in(client,nextWizard,needSwitch,title):
                     
                 
                 if wizard == nextWizard:
-                    print("WIZARD IS NEXT WIZARD")
                     await asyncio.sleep(0.5)
                     await click_window_until_gone(client, playButton)
 
