@@ -253,7 +253,8 @@ async def azothFarmer(p,listPosition):
         for x in activeClients[listPosition].wizLst:
             print(x)
         
-        
+        if await is_visible_by_path(p.root_window, leftClassRoomButton):
+            await click_window_until_gone(p, leftClassRoomButton)
         await click_window_until_gone(p, playButton)
         
 
@@ -514,19 +515,14 @@ async def logout_and_in(client,nextWizard,needSwitch,title):
                 
         while not(await is_visible_by_path(client.root_window, playButton)): await asyncio.sleep(0.1)
 
-                
-        
-        
                     
                 
         if needSwitch: print(f'[{title}] Switching Wizard To: {nextWizard}' )
-            
+        
+        start_time = asyncio.get_event_loop().time()    
+        
         switch = True        
-        while switch and needSwitch:
-                if await is_visible_by_path(client.root_window, rightClassRoomButton):
-                    await click_window_until_gone(client, rightClassRoomButton)
-                
-                
+        while switch and needSwitch: 
                 await client.send_key(Keycode.TAB, 0.05)
                 try:        
                     wizard  = wizardInfo(await (await window_from_path(client.root_window, txtName)).maybe_text(),
@@ -534,16 +530,32 @@ async def logout_and_in(client,nextWizard,needSwitch,title):
                              await (await window_from_path(client.root_window, txtLocation)).maybe_text(),0,0)
                 except:
                     pass
-                        
+                    
+                
+                current_time = asyncio.get_event_loop().time()
+                
+                if await is_visible_by_path(client.root_window, rightClassRoomButton):
+                    if wizard != nextWizard:
+                        await click_window_until_gone(client, rightClassRoomButton)
+
+                if current_time - start_time > 10:
+                    print("left room triggered")
+                    await asyncio.sleep(1)
+                    await click_window_until_gone(client, leftClassRoomButton)
+                    break
                 
                 if wizard == nextWizard:
                     switch = False
                     
                 
+                if wizard == nextWizard:
+                    print("WIZARD IS NEXT WIZARD")
+                    await asyncio.sleep(0.5)
+                    await click_window_until_gone(client, playButton)
+
 
         await click_window_until_gone(client, playButton)
-
-            
+  
 
         await client.wait_for_zone_change()
         await asyncio.sleep(0.5)
@@ -616,7 +628,7 @@ async def main():
     print("""Credits: Hailtothethrone- the original bot,
           Nitsuj- discovery of Halley's observatory,
           Ultimate- fuck you, thanks for the help
-          Lxghtend- added 7th character support (i snuck this in here)""")
+          Lxghtend and sydu8- added 7th character support (i snuck this in here)""")
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),"accounts.txt")) as my_file:
             accountList = [
                 line.strip().split(":") for line in my_file.read().split("\n") #reads account list and puts into into a list
