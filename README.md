@@ -1,2 +1,2 @@
 # azoth
-all credit for this goes to milwr, all i did was add 7th character support
+all credit for this goes to milwr, i was added 7th character support, optimization, and some features
