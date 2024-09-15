@@ -21,12 +21,13 @@ class clientInfo: #contains all information needed for a client to run
         self.timeSinceBotAction = timeSinceBotAction
 
 class wizardInfo: #contains all information of a wizard needed for differentiation and logic of the run
-    def __init__(self, wizardName: str, wizardLevel: str, wizardLocation: str, currentHappiness: int, totalHappiness: int):
+    def __init__(self, wizardName: str, wizardLevel: str, wizardLocation: str, currentHappiness: int, totalHappiness: int, wizardAzoth: int):
         self.Name = wizardName
         self.Level = wizardLevel
         self.Location = wizardLocation
         self.Happiness = currentHappiness
         self.totalHappiness = totalHappiness
+        self.Azoth = wizardAzoth
     def __str__(self):
         return f'{removeTags(self.Name)} the {removeTags(self.Level)} in {removeTags(self.Location)}'
     def __eq__(self, other) : 
@@ -63,6 +64,7 @@ playButton = ['WorldView', 'mainWindow', 'btnPlay']
 chatWindowPath = ['WorldView', 'WizardChatBox', 'chatContainer', 'chatLogContainer', 'chatLogInnerContainer', 'chatLog']
 rightClassRoomButton = ["WorldView", "mainWindow", "RightClassRoomButton"]
 leftClassRoomButton = ["WorldView", "mainWindow", "LeftClassRoomButton"]
+cardCount = ['WorldView', 'DeckConfiguration', 'DeckConfigurationWindow', 'ControlSprite', 'DeckPage', 'TreasureCardCount']
 
 
 
@@ -86,8 +88,6 @@ with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),'Locations.tx
             
             locationList += [[loc,farmtype,xyzTemp]] #packs everything back into the lists
             baseLocationList += [loc]
-            
-
 
 # Returns a window, given a path 
 async def window_from_path(base_window:Window, path:list[str]) -> Window:
@@ -118,13 +118,9 @@ async def click_window_until_gone(client, path): #i did this im very cool
             await asyncio.sleep(0.1)
         
 
-
-
 async def petPower(client, delay=2): #clicks the power button
     await asyncio.sleep(0.2)
     await click_window_from_path(client.mouse_handler, client.root_window, petPowerButton)
-
-    
 
 
 def removeTags(string):
@@ -133,7 +129,6 @@ def removeTags(string):
 
 def removeTitle(string):
     return string.replace('AzothFarm: ','')
-
 
 
 async def nearestReagent(client,title): #returns a boolean for whether a reagent was detected and the reagents location
@@ -198,8 +193,6 @@ async def skipDialogue(client): #skips dialogue boxes if any opened
     
 
 async def azothCollect(client,tipAmount): #collects azoth, uses the number of TipWindows to check if azoth is collected >>> TO BE REPLACED WITH DROP LOGGER
-
-
     while await petPowerVisibility(client):
         await petPower(client,0.05)
     while not 'You received: Azoth' in await (await window_from_path(client.root_window, chatWindowPath)).maybe_text():
@@ -234,7 +227,7 @@ async def azothFarmer(p,listPosition):
                 
         wizard  = wizardInfo(await (await window_from_path(p.root_window, txtName)).maybe_text(), #then grab the next persons info, and if its in the spot, add it to the list
                              await (await window_from_path(p.root_window, txtLevel)).maybe_text(),
-                             await (await window_from_path(p.root_window, txtLocation)).maybe_text(),0,0)
+                             await (await window_from_path(p.root_window, txtLocation)).maybe_text(),0,0,0)
                              
         if await is_visible_by_path(p.root_window, rightClassRoomButton):
             await click_window_until_gone(p, rightClassRoomButton)                     
@@ -246,22 +239,27 @@ async def azothFarmer(p,listPosition):
             await p.send_key(Keycode.TAB, 0)
             wizard  = wizardInfo(await (await window_from_path(p.root_window, txtName)).maybe_text(),
                                 await (await window_from_path(p.root_window, txtLevel)).maybe_text(),
-                                await (await window_from_path(p.root_window, txtLocation)).maybe_text(),0,0)
+                                await (await window_from_path(p.root_window, txtLocation)).maybe_text(),0,0,0)
                                 
               
         print(f'[{activeClients[listPosition].title}] Is using these wizards:')
         for x in activeClients[listPosition].wizLst:
             print(x)
         
-        if await is_visible_by_path(p.root_window, leftClassRoomButton):
+        if await is_visible_by_path(p.root_window, leftClassRoomButton): # go to second classroom
             await click_window_until_gone(p, leftClassRoomButton)
-        await click_window_until_gone(p, playButton)
-        
 
-                
+        if removeTags(str(await (await window_from_path(p.root_window, txtLocation)).maybe_text())) in baseLocationList : # if its correct then play
+            await click_window_until_gone(p, playButton)
 
-        
-        
+        elif not removeTags(str(await (await window_from_path(p.root_window, txtLocation)).maybe_text())) in baseLocationList : # while not correct
+            if await is_visible_by_path(p.root_window, rightClassRoomButton): # if not correct go back to first classroom
+                await click_window_until_gone(p, rightClassRoomButton)
+            await p.send_key(Keycode.TAB) # switch until correct
+
+        if await is_visible_by_path(p.root_window, playButton):
+            await click_window_until_gone(p, playButton)
+
         await asyncio.sleep(8.5)
         
         if await is_visible_by_path(p.root_window, quitButton):
@@ -302,7 +300,22 @@ async def azothFarmer(p,listPosition):
 
                     while await is_visible_by_path(p.root_window, feedPet):
                         await click_window_from_path(p.mouse_handler, p.root_window, petSystem)
-                #end of checking pet happiness
+
+
+                    #this checks current azoth
+                    while not await is_visible_by_path(p.root_window, cardCount):
+                        await p.send_key(Keycode.P)
+                        await asyncio.sleep(0.1)
+
+                    window : Window = await window_from_path(p.root_window, cardCount)
+
+                    if window:
+                        cardCountText = await window.maybe_text()
+                        cardCountText = cardCountText.replace("<center>", '').replace("</center>", '').replace("/999", '')
+                        wizard.Azoth = int(cardCountText)
+    
+                
+                #end of checking pet happiness and azoth
                 
                 
                 while not needSwitch:
@@ -315,6 +328,7 @@ async def azothFarmer(p,listPosition):
                         
                     
                     print(f'[{activeClients[listPosition].title}]: {removeTags(wizard.Name)} has {wizard.Happiness} happiness')
+                    print(f'[{activeClients[listPosition].title}]: {removeTags(wizard.Name)} has {wizard.Azoth} azoth')
                     keepWizard = True #defines whether a wizard should be kept
                     
                     
@@ -322,6 +336,11 @@ async def azothFarmer(p,listPosition):
                         print(f'[{activeClients[listPosition].title}] Feeding Pet')
                         keepWizard = await refillhappiness(p)
                         wizard.Happiness = wizard.totalHappiness 
+
+                    if int(wizard.Azoth) == 999 :
+                        print(f'[{activeClients[listPosition].title}] has max azoth.  Removing from list.')
+                        keepWizard = False
+
                     
                     if keepWizard:
                         # Entering Dungeon
@@ -381,6 +400,7 @@ async def azothFarmer(p,listPosition):
                                 needSwitch = True
                                 activeClients[listPosition].totalAzothCollected += 1
                                 wizard.Happiness -= 5
+                                wizard.Azoth += 1
                                 
                                 
 
@@ -418,7 +438,7 @@ async def azothFarmer(p,listPosition):
                     await asyncio.sleep(0.2)
                     
                     if not keepWizard: #if we arent keeping the wizard we need it to switch
-                        needSwitch =True
+                        needSwitch = True
 
                     await logout_and_in(p,nextWizard,needSwitch,activeClients[listPosition].title)
                     
@@ -527,7 +547,7 @@ async def logout_and_in(client,nextWizard,needSwitch,title):
                 try:        
                     wizard  = wizardInfo(await (await window_from_path(client.root_window, txtName)).maybe_text(),
                              await (await window_from_path(client.root_window, txtLevel)).maybe_text(),
-                             await (await window_from_path(client.root_window, txtLocation)).maybe_text(),0,0)
+                             await (await window_from_path(client.root_window, txtLocation)).maybe_text(),0,0,0)
                 except:
                     pass
                     
@@ -538,8 +558,8 @@ async def logout_and_in(client,nextWizard,needSwitch,title):
                     if wizard != nextWizard:
                         await click_window_until_gone(client, rightClassRoomButton)
 
-                if current_time - start_time > 10:
-                    await asyncio.sleep(1)
+                if current_time - start_time > 4:
+                    await asyncio.sleep(0.3)
                     await click_window_until_gone(client, leftClassRoomButton)
                     break
                 
@@ -700,6 +720,9 @@ async def refillhappiness(p):
             await click_window_from_path(p.mouse_handler, p.root_window, petSystem)
         return True
         
+
+async def checkSpace(p):
+
         
 
             
