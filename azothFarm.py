@@ -65,6 +65,9 @@ chatWindowPath = ['WorldView', 'WizardChatBox', 'chatContainer', 'chatLogContain
 rightClassRoomButton = ["WorldView", "mainWindow", "RightClassRoomButton"]
 leftClassRoomButton = ["WorldView", "mainWindow", "LeftClassRoomButton"]
 cardCount = ['WorldView', 'DeckConfiguration', 'DeckConfigurationWindow', 'ControlSprite', 'DeckPage', 'TreasureCardCount']
+deckWindow = ['WorldView', 'DeckConfiguration', 'DeckConfigurationWindow']
+treasureCardButton = ['WorldView', 'DeckConfiguration', 'DeckConfigurationWindow', 'ControlSprite', 'TreasureCardButton']
+deckCloseButton = ['WorldView', 'DeckConfiguration', 'Close_Button']
 
 
 
@@ -303,8 +306,12 @@ async def azothFarmer(p,listPosition):
 
 
                     #this checks current azoth
-                    while not await is_visible_by_path(p.root_window, cardCount):
+                    while not await is_visible_by_path(p.root_window, deckWindow):
                         await p.send_key(Keycode.P)
+                        await asyncio.sleep(0.1)
+
+                    while not await is_visible_by_path(p.root_window, cardCount):
+                        await click_window_from_path(p.mouse_handler, p.root_window, treasureCardButton)
                         await asyncio.sleep(0.1)
 
                     window : Window = await window_from_path(p.root_window, cardCount)
@@ -313,6 +320,8 @@ async def azothFarmer(p,listPosition):
                         cardCountText = await window.maybe_text()
                         cardCountText = cardCountText.replace("<center>", '').replace("</center>", '').replace("/999", '')
                         wizard.Azoth = int(cardCountText)
+
+                    await click_window_until_gone(p, deckCloseButton)
     
                 
                 #end of checking pet happiness and azoth
@@ -720,11 +729,6 @@ async def refillhappiness(p):
             await click_window_from_path(p.mouse_handler, p.root_window, petSystem)
         return True
         
-
-async def checkSpace(p):
-
-        
-
             
     # Error Handling
 async def run():
