@@ -347,8 +347,7 @@ async def azothFarmer(p,listPosition):
                         wizard.Happiness = wizard.totalHappiness 
 
                     if int(wizard.Azoth) == 999 :
-                        print(f'[{activeClients[listPosition].title}] Removing Wizard From List: {wizard}' )
-
+                        #print(f'[{activeClients[listPosition].title}] Removing Wizard From List: {wizard}' )
                         keepWizard = False
 
                     
